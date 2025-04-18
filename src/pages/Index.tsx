@@ -1,5 +1,6 @@
 
 import { FileUploadZone } from "@/components/FileUploadZone";
+import AuthButton from "@/components/AuthButton";
 
 const Index = () => {
   return (
@@ -14,6 +15,11 @@ const Index = () => {
         className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-blue-200 to-purple-200 blur-3xl opacity-30 animate-float"
         style={{ animationDelay: '2s' }}
       />
+
+      {/* Auth Button */}
+      <div className="absolute top-6 right-6">
+        <AuthButton />
+      </div>
 
       {/* Main content */}
       <div className="relative w-full max-w-4xl mx-auto">
