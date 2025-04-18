@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FileIcon, Download, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const SharePage = () => {
   const { shareId } = useParams();
@@ -46,6 +47,42 @@ const SharePage = () => {
 
     fetchFileData();
   }, [shareId]);
+
+  const handleDownload = async () => {
+    try {
+      if (!fileData) return;
+      
+      // This is a mock download since we don't have actual file storage
+      // In a real implementation, you would fetch the file from storage
+      
+      // Create a mock file with some content
+      const mockContent = `This is a mock file content for ${fileData.file_name}.
+      In a production environment, this would be the actual file content.
+      File name: ${fileData.file_name}
+      File size: ${formatFileSize(fileData.file_size)}
+      Shared on: ${formatDate(fileData.created_at)}
+      Expires on: ${formatDate(fileData.expires_at)}`;
+      
+      // Create a Blob from the content
+      const blob = new Blob([mockContent], { type: 'text/plain' });
+      
+      // Create a download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileData.file_name;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success("File downloaded successfully!");
+    } catch (err: any) {
+      toast.error("Failed to download file: " + (err.message || "Unknown error"));
+    }
+  };
 
   if (loading) {
     return (
@@ -116,7 +153,10 @@ const SharePage = () => {
             </div>
           </div>
           
-          <Button className="w-full gap-2">
+          <Button 
+            className="w-full gap-2" 
+            onClick={handleDownload}
+          >
             <Download size={16} />
             Download File
           </Button>
