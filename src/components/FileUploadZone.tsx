@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Link as LinkIcon, ArrowRight, Copy } from "lucide-react";
 import { Button } from "./ui/button";
@@ -7,12 +7,33 @@ import { Progress } from "./ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
+import { useNavigate } from "react-router-dom";
 
 export const FileUploadZone = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    };
+    
+    checkUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => subscription.unsubscribe();
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
@@ -27,6 +48,13 @@ export const FileUploadZone = () => {
   const handleShare = async () => {
     if (!files.length) return;
     
+    // Check if user is authenticated
+    if (!user) {
+      toast.error("You need to log in to share files");
+      navigate("/auth");
+      return;
+    }
+    
     setIsUploading(true);
     
     try {
@@ -40,7 +68,8 @@ export const FileUploadZone = () => {
         .insert({
           file_name: files[0].name,
           file_size: files[0].size,
-          share_link: shareLink
+          share_link: shareLink,
+          user_id: user.id // Add the user_id field
         });
 
       if (error) throw error;
