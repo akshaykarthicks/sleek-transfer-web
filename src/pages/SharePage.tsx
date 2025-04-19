@@ -59,10 +59,32 @@ const SharePage = () => {
     setIsDownloading(true);
     
     try {
+      // Get file extension from filename
+      const fileName = fileData.file_name || "download.txt";
+      const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'txt';
+      
+      // Set MIME type based on file extension
+      let mimeType = 'text/plain';
+      
+      // Common MIME types for popular file formats
+      if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+        mimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
+      } else if (['pdf'].includes(fileExtension)) {
+        mimeType = 'application/pdf';
+      } else if (['doc', 'docx'].includes(fileExtension)) {
+        mimeType = 'application/msword';
+      } else if (['xls', 'xlsx'].includes(fileExtension)) {
+        mimeType = 'application/vnd.ms-excel';
+      } else if (['mp3', 'wav'].includes(fileExtension)) {
+        mimeType = `audio/${fileExtension}`;
+      } else if (['mp4', 'webm'].includes(fileExtension)) {
+        mimeType = `video/${fileExtension}`;
+      }
+      
       // This is a mock download since we don't have actual file storage
       // In a real implementation, you would fetch the file from storage
       
-      // Create a mock file with some content
+      // Create mock content - in a real app this would be actual file data
       const mockContent = `This is a mock file content for ${fileData.file_name}.
       In a production environment, this would be the actual file content.
       File name: ${fileData.file_name}
@@ -70,8 +92,16 @@ const SharePage = () => {
       Shared on: ${formatDate(fileData.created_at)}
       Expires on: ${formatDate(fileData.expires_at)}`;
       
-      // Create a Blob from the content
-      const blob = new Blob([mockContent], { type: 'text/plain' });
+      // For images and binaries, create a mock binary blob
+      const isBinary = mimeType.startsWith('image/') || 
+                      mimeType.startsWith('audio/') || 
+                      mimeType.startsWith('video/') || 
+                      mimeType === 'application/pdf';
+      
+      // Create a Blob with the appropriate MIME type
+      const blob = isBinary 
+        ? new Blob([new Uint8Array(100).fill(0)], { type: mimeType }) // Mock binary data
+        : new Blob([mockContent], { type: mimeType });
       
       // Create a download link
       const url = URL.createObjectURL(blob);
@@ -79,7 +109,7 @@ const SharePage = () => {
       // Create and click the download link
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileData.file_name || "download.txt";
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       
