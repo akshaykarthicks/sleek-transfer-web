@@ -58,32 +58,55 @@ export const FileUploadZone = () => {
     setIsUploading(true);
     
     try {
-      // Generate a unique share link
+      const file = files[0];
+      // Generate a unique share ID
       const shareId = nanoid(10);
       const shareLink = `${window.location.origin}/share/${shareId}`;
+      
+      // Generate a unique filename to avoid collisions
+      const fileExt = file.name.split('.').pop() || '';
+      const uniqueFilename = `${Date.now()}_${shareId}.${fileExt}`;
+      
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('shared_files')
+        .upload(`public/${uniqueFilename}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL for the file
+      const { data: { publicUrl } } = supabase.storage
+        .from('shared_files')
+        .getPublicUrl(`public/${uniqueFilename}`);
 
       // Store share information in database
       const { error } = await supabase
         .from('file_shares')
         .insert({
-          file_name: files[0].name,
-          file_size: files[0].size,
+          file_name: file.name,
+          file_size: file.size,
           share_link: shareLink,
-          user_id: user.id // Add the user_id field
+          user_id: user.id,
+          file_path: `public/${uniqueFilename}`,
+          file_url: publicUrl
         });
 
       if (error) throw error;
 
       // Simulate upload progress
       for (let i = 0; i <= 100; i += 10) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
         setProgress(i);
       }
 
       setShareLink(shareLink);
       toast.success("Share link generated successfully!");
     } catch (error: any) {
-      toast.error(error.message);
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to share file");
     } finally {
       setIsUploading(false);
       setProgress(0);
@@ -147,7 +170,7 @@ export const FileUploadZone = () => {
             <div className="space-y-2">
               <Progress value={progress} className="h-2" />
               <p className="text-sm text-center text-gray-500">
-                Generating share link... {progress}%
+                Uploading file... {progress}%
               </p>
             </div>
           )}
