@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Link as LinkIcon, ArrowRight, Copy } from "lucide-react";
@@ -17,7 +16,6 @@ export const FileUploadZone = () => {
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
 
-  // Check if user is authenticated
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -48,7 +46,6 @@ export const FileUploadZone = () => {
   const handleShare = async () => {
     if (!files.length) return;
     
-    // Check if user is authenticated
     if (!user) {
       toast.error("You need to log in to share files");
       navigate("/auth");
@@ -59,51 +56,46 @@ export const FileUploadZone = () => {
     
     try {
       const file = files[0];
-      // Generate a unique share ID
       const shareId = nanoid(10);
       const shareLink = `${window.location.origin}/share/${shareId}`;
       
-      // Generate a unique filename to avoid collisions
       const fileExt = file.name.split('.').pop() || '';
       const uniqueFilename = `${Date.now()}_${shareId}.${fileExt}`;
+      const filePath = `public/${uniqueFilename}`;
       
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('shared_files')
-        .upload(`public/${uniqueFilename}`, file, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
       if (uploadError) throw uploadError;
 
-      // Get the public URL for the file
       const { data: { publicUrl } } = supabase.storage
         .from('shared_files')
-        .getPublicUrl(`public/${uniqueFilename}`);
+        .getPublicUrl(filePath);
 
-      // Store share information in database
-      const { error } = await supabase
+      const { error: dbError } = await supabase
         .from('file_shares')
         .insert({
           file_name: file.name,
           file_size: file.size,
           share_link: shareLink,
           user_id: user.id,
-          file_path: `public/${uniqueFilename}`,
+          file_path: filePath,
           file_url: publicUrl
         });
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      // Simulate upload progress
       for (let i = 0; i <= 100; i += 10) {
         await new Promise(resolve => setTimeout(resolve, 100));
         setProgress(i);
       }
 
       setShareLink(shareLink);
-      toast.success("Share link generated successfully!");
+      toast.success("File shared successfully!");
     } catch (error: any) {
       console.error("Upload error:", error);
       toast.error(error.message || "Failed to share file");

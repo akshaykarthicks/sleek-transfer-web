@@ -14,7 +14,9 @@ export type Database = {
           created_at: string
           expires_at: string
           file_name: string
+          file_path: string | null
           file_size: number
+          file_url: string | null
           id: string
           share_link: string
           user_id: string
@@ -23,7 +25,9 @@ export type Database = {
           created_at?: string
           expires_at?: string
           file_name: string
+          file_path?: string | null
           file_size: number
+          file_url?: string | null
           id?: string
           share_link: string
           user_id: string
@@ -32,7 +36,9 @@ export type Database = {
           created_at?: string
           expires_at?: string
           file_name?: string
+          file_path?: string | null
           file_size?: number
+          file_url?: string | null
           id?: string
           share_link?: string
           user_id?: string
