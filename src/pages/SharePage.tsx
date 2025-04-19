@@ -11,6 +11,7 @@ const SharePage = () => {
   const [fileData, setFileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const fetchFileData = async () => {
@@ -39,6 +40,7 @@ const SharePage = () => {
           setFileData(data);
         }
       } catch (err: any) {
+        console.error("Error fetching file data:", err);
         setError(err.message || "Failed to load file data");
       } finally {
         setLoading(false);
@@ -49,9 +51,14 @@ const SharePage = () => {
   }, [shareId]);
 
   const handleDownload = async () => {
+    if (!fileData) {
+      toast.error("No file data available");
+      return;
+    }
+    
+    setIsDownloading(true);
+    
     try {
-      if (!fileData) return;
-      
       // This is a mock download since we don't have actual file storage
       // In a real implementation, you would fetch the file from storage
       
@@ -68,19 +75,25 @@ const SharePage = () => {
       
       // Create a download link
       const url = URL.createObjectURL(blob);
+      
+      // Create and click the download link
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileData.file_name;
+      a.download = fileData.file_name || "download.txt";
       document.body.appendChild(a);
       a.click();
       
       // Clean up
-      URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast.success("File downloaded successfully!");
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success("File downloaded successfully!");
+        setIsDownloading(false);
+      }, 100);
     } catch (err: any) {
+      console.error("Download error:", err);
       toast.error("Failed to download file: " + (err.message || "Unknown error"));
+      setIsDownloading(false);
     }
   };
 
@@ -112,6 +125,7 @@ const SharePage = () => {
 
   // Format the file size
   const formatFileSize = (bytes: number) => {
+    if (!bytes && bytes !== 0) return "Unknown size";
     if (bytes < 1024) return bytes + " bytes";
     else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
     else if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + " MB";
@@ -120,12 +134,17 @@ const SharePage = () => {
 
   // Format date
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    if (!dateString) return "Unknown date";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch (err) {
+      return "Invalid date";
+    }
   };
 
   return (
@@ -156,9 +175,19 @@ const SharePage = () => {
           <Button 
             className="w-full gap-2" 
             onClick={handleDownload}
+            disabled={isDownloading}
           >
-            <Download size={16} />
-            Download File
+            {isDownloading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Downloading...
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                Download File
+              </>
+            )}
           </Button>
           
           <p className="text-xs text-center text-gray-500 mt-4">
