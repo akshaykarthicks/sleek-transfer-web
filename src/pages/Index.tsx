@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Clock, FileIcon } from "lucide-react";
+import { History, Link as LinkIcon, Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface FileHistory {
   id: string;
@@ -23,22 +25,31 @@ const Index = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
         const { data } = await supabase
           .from('file_shares')
           .select('*')
           .eq('user_id', user.id)
-          .gte('created_at', threeDaysAgo.toISOString())
+          .gte('created_at', twoDaysAgo.toISOString())
           .order('created_at', { ascending: false });
-          
+
         setRecentFiles(data || []);
       }
     };
-    
+
     getUser();
   }, []);
+
+  const copyToClipboard = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center p-6 relative bg-gradient-to-br from-purple-50 via-white to-blue-50">
@@ -76,40 +87,60 @@ const Index = () => {
         </Card>
 
         {user && recentFiles.length > 0 && (
-          <Card className="mt-8 bg-white/80 backdrop-blur-lg shadow-xl border border-white/20 animate-fade-in">
+          <Card className="mt-8 bg-white/90 backdrop-blur-md shadow-xl border border-white/30 animate-fade-in">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Clock className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-2xl font-semibold text-gray-800">
+                <History className="w-6 h-6 text-purple-600" />
                 Recent Shares
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
                 {recentFiles.map((file) => (
-                  <Link
-                    key={file.id}
-                    to={`/share/${file.share_link}`}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/50 transition-colors group"
+                  <div 
+                    key={file.id} 
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-3 rounded-lg border border-gray-200 hover:shadow-lg hover:border-purple-300 transition-shadow duration-200"
                   >
-                    <div className="p-2 rounded-md bg-purple-100 text-purple-600 group-hover:bg-purple-200 transition-colors">
-                      <FileIcon className="w-5 h-5" />
+                    <div className="flex items-center gap-3 truncate">
+                      <div className="p-2 rounded-md bg-purple-100 text-purple-600">
+                        <LinkIcon className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-lg font-medium text-gray-900 truncate">
+                          {file.file_name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Shared on {new Date(file.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {file.file_name}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(file.created_at).toLocaleDateString()}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={file.share_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-md border border-purple-600 text-purple-700 hover:bg-purple-600 hover:text-white transition-colors text-sm truncate max-w-xs"
+                        title="Open share link"
+                      >
+                        {file.share_link}
+                        <LinkIcon className="w-4 h-4" />
+                      </a>
+                      <Button 
+                        size="sm" variant="outline" 
+                        onClick={() => copyToClipboard(file.share_link)}
+                        title="Copy share link"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </CardContent>
           </Card>
         )}
 
-        <footer className="mt-8 text-center text-sm text-gray-500">
+        <footer className="mt-12 text-center text-sm text-gray-500">
           <p>Files auto-delete after 7 days • End-to-end encrypted</p>
         </footer>
       </div>
@@ -118,3 +149,4 @@ const Index = () => {
 };
 
 export default Index;
+
