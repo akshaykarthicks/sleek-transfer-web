@@ -18,27 +18,61 @@ interface FileHistory {
 const Index = () => {
   const [recentFiles, setRecentFiles] = useState<FileHistory[]>([]);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) {
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const fetchUserAndFiles = async () => {
+      try {
+        setLoading(true);
+        // Get current session
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
 
-        const { data } = await supabase
-          .from('file_shares')
-          .select('*')
-          .eq('user_id', user.id)
-          .gte('created_at', twoDaysAgo.toISOString())
-          .order('created_at', { ascending: false });
+        if (user) {
+          // Calculate date from 2 days ago
+          const twoDaysAgo = new Date();
+          twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-        setRecentFiles(data || []);
+          // Query recent files with proper error handling
+          const { data, error } = await supabase
+            .from('file_shares')
+            .select('*')
+            .eq('user_id', user.id)
+            .gte('created_at', twoDaysAgo.toISOString())
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error("Error fetching files:", error);
+            toast.error("Failed to load recent files");
+          } else {
+            setRecentFiles(data || []);
+          }
+        }
+      } catch (err) {
+        console.error("Session error:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    getUser();
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+        if (session?.user) {
+          fetchUserAndFiles();
+        } else {
+          setRecentFiles([]);
+        }
+      }
+    );
+
+    fetchUserAndFiles();
+
+    // Clean up subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const copyToClipboard = async (link: string) => {
@@ -69,7 +103,7 @@ const Index = () => {
       </div>
 
       {/* Main content */}
-      <div className="relative w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
         <div className="text-center mb-12 max-w-3xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 bg-clip-text text-transparent animate-fade-in tracking-tight leading-tight">
             Share Files Securely
@@ -79,33 +113,33 @@ const Index = () => {
           </p>
         </div>
 
-        <Card className="bg-white/80 backdrop-blur-lg shadow-lg border border-white/30 rounded-2xl animate-fade-in">
+        <Card className="bg-white/80 backdrop-blur-lg shadow-xl border border-white/30 rounded-2xl animate-fade-in overflow-hidden">
           <CardContent className="p-8">
             <FileUploadZone />
           </CardContent>
         </Card>
 
-        {user && recentFiles.length > 0 && (
-          <Card className="mt-10 bg-gradient-to-r from-purple-50 to-blue-50 backdrop-blur-lg shadow-2xl border border-white/30 rounded-2xl animate-fade-in">
-            <CardHeader className="pb-2">
+        {user && !loading && recentFiles.length > 0 && (
+          <Card className="mt-10 bg-gradient-to-r from-purple-50 to-blue-50 backdrop-blur-lg shadow-xl border border-white/30 rounded-2xl animate-fade-in overflow-hidden">
+            <CardHeader className="pb-2 border-b border-gray-100">
               <CardTitle className="flex items-center gap-3 text-3xl font-semibold text-purple-800">
                 <History className="w-7 h-7" />
                 Recent Shares
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="p-4">
               <div className="space-y-4">
                 {recentFiles.map((file) => (
                   <div
                     key={file.id}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm shadow hover:shadow-lg transition-shadow duration-300"
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                   >
                     <div className="flex items-center gap-4 truncate">
-                      <div className="flex-shrink-0 p-3 bg-purple-100 rounded-lg text-purple-700 select-none">
+                      <div className="flex-shrink-0 p-3 bg-purple-100 rounded-lg text-purple-700 select-none shadow-inner">
                         <LinkIcon className="w-7 h-7" />
                       </div>
                       <div className="min-w-0 flex flex-col">
-                        <p className="text-lg font-semibold text-gray-900 truncate">
+                        <p className="text-lg font-bold text-purple-900 truncate">
                           {file.file_name}
                         </p>
                         <p className="text-sm text-gray-500">
@@ -113,23 +147,22 @@ const Index = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 max-w-full md:max-w-[70%] truncate">
+                    <div className="flex items-center gap-2 w-full md:w-auto md:max-w-[60%] truncate bg-gray-50 rounded-lg p-1 pl-3 border border-gray-200">
                       <a
                         href={file.share_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-purple-600 text-purple-700 font-medium text-sm truncate max-w-full hover:bg-purple-600 hover:text-white transition-colors"
+                        className="flex-1 truncate text-purple-700 hover:text-purple-900 transition-colors"
                         title="Open share link"
                       >
-                        <LinkIcon className="w-4 h-4" />
                         <span className="truncate">{file.share_link}</span>
                       </a>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => copyToClipboard(file.share_link)}
                         title="Copy share link"
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 hover:bg-purple-100 text-purple-700"
                       >
                         <Copy className="w-4 h-4" />
                       </Button>
@@ -141,6 +174,13 @@ const Index = () => {
           </Card>
         )}
 
+        {user && loading && (
+          <div className="mt-10 text-center p-8">
+            <div className="w-8 h-8 border-4 border-t-transparent border-primary rounded-full animate-spin mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading recent shares...</p>
+          </div>
+        )}
+
         <footer className="mt-16 text-center text-xs md:text-sm text-gray-500 font-light select-none">
           <p>Files auto-delete after 7 days • End-to-end encrypted</p>
         </footer>
@@ -150,4 +190,3 @@ const Index = () => {
 };
 
 export default Index;
-
