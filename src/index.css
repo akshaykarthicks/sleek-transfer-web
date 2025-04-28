@@ -1,28 +1,29 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 0%; /* Black */
-    --foreground: 60 100% 50%; /* Yellow */
+    --background: 0 0% 0%; /* Pure Black */
+    --foreground: 0 0% 100%; /* Pure White */
     --card: 0 0% 5%;
-    --card-foreground: 60 100% 50%;
+    --card-foreground: 0 0% 100%;
     --popover: 0 0% 0%;
-    --popover-foreground: 60 100% 50%;
-    --primary: 60 100% 50%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
     --primary-foreground: 0 0% 0%;
-    --secondary: 60 100% 40%;
+    --secondary: 0 0% 90%;
     --secondary-foreground: 0 0% 0%;
     --muted: 0 0% 20%;
-    --muted-foreground: 60 100% 50%;
-    --accent: 60 100% 50%;
+    --muted-foreground: 0 0% 80%;
+    --accent: 0 0% 100%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 60 100% 50%;
+    --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 60 100% 50%;
+    --ring: 0 0% 100%;
     --radius: 1rem;
   }
 }
@@ -38,8 +39,8 @@
 
 @layer utilities {
   .bg-grid-pattern {
-    background-image: linear-gradient(to right, #0001 1px, transparent 1px),
-      linear-gradient(to bottom, #0001 1px, transparent 1px);
+    background-image: linear-gradient(to right, #fff1 1px, transparent 1px),
+      linear-gradient(to bottom, #fff1 1px, transparent 1px);
     background-size: 24px 24px;
   }
 }
