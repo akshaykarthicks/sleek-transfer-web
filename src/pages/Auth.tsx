@@ -28,7 +28,6 @@ const Auth = () => {
     
     try {
       if (isLogin) {
-        // Login
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password
@@ -39,7 +38,6 @@ const Auth = () => {
         toast.success('Logged in successfully');
         navigate('/');
       } else {
-        // Signup
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -61,54 +59,65 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 p-6">
-      <div className="w-full max-w-md bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl p-8">
-        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-          {isLogin ? 'Welcome Back' : 'Create Account'}
-        </h2>
-        
-        <form onSubmit={handleAuth} className="space-y-4">
-          {!isLogin && (
+    <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent opacity-50" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02]" />
+      
+      <div className="w-full max-w-md relative z-10">
+        <div className="p-8 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+          <h2 className="text-3xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/70">
+            {isLogin ? 'Welcome Back' : 'Create Account'}
+          </h2>
+          
+          <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <Input
+                type="text"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/50"
+              />
+            )}
+            
             <Input
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/50"
             />
-          )}
-          
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          
-          <Button type="submit" className="w-full">
-            {isLogin ? 'Log In' : 'Sign Up'}
-          </Button>
-        </form>
-        
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline"
+            
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/50"
+            />
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10"
             >
-              {isLogin ? 'Sign Up' : 'Log In'}
-            </button>
-          </p>
+              {isLogin ? 'Log In' : 'Sign Up'}
+            </Button>
+          </form>
+          
+          <div className="text-center mt-4">
+            <p className="text-sm text-white/70">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button 
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-white hover:text-white/80 underline-offset-4 hover:underline"
+              >
+                {isLogin ? 'Sign Up' : 'Log In'}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>
