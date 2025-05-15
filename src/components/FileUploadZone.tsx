@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Link as LinkIcon, ArrowRight, Copy } from "lucide-react";
@@ -7,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { useNavigate } from "react-router-dom";
+import { FileShare } from "@/types/supabase";
 
 export const FileUploadZone = () => {
   const [files, setFiles] = useState<File[]>([]);
@@ -76,8 +78,9 @@ export const FileUploadZone = () => {
         .from('shared_files')
         .getPublicUrl(filePath);
 
-      const { error: dbError } = await supabase
-        .from('file_shares')
+      // Use type assertion to tell TypeScript about our table structure
+      const { error: dbError } = await (supabase
+        .from('file_shares') as any)
         .insert({
           file_name: file.name,
           file_size: file.size,
@@ -85,7 +88,7 @@ export const FileUploadZone = () => {
           user_id: user.id,
           file_path: filePath,
           file_url: publicUrl
-        });
+        } as FileShare);
 
       if (dbError) throw dbError;
 

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import AuthButton from "@/components/AuthButton";
@@ -7,13 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { History, Link as LinkIcon, Copy, Upload, Shield, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { FileShare } from "@/types/supabase";
 
-interface FileHistory {
-  id: string;
-  file_name: string;
-  created_at: string;
-  share_link: string;
-}
+interface FileHistory extends FileShare {}
 
 const Index = () => {
   const [recentFiles, setRecentFiles] = useState<FileHistory[]>([]);
@@ -49,8 +44,9 @@ const Index = () => {
           const twoDaysAgo = new Date();
           twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-          const { data, error } = await supabase
-            .from('file_shares')
+          // Use type assertion for the table
+          const { data, error } = await (supabase
+            .from('file_shares') as any)
             .select('*')
             .eq('user_id', user.id)
             .gte('created_at', twoDaysAgo.toISOString())
@@ -203,7 +199,7 @@ const Index = () => {
       )}
 
       <footer className="mt-auto py-8 text-center text-sm text-white/60">
-        <p>Files auto-delete after 7 days • End-to-end encrypted</p>
+        <p>Files auto-delete after 7 days • End-to-end encrypted • © 2025 Akshay Karthick S</p>
       </footer>
     </div>
   );

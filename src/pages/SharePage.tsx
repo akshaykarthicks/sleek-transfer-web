@@ -1,14 +1,14 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FileIcon, Download, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { FileShare } from "@/types/supabase";
 
 const SharePage = () => {
   const { shareId } = useParams();
-  const [fileData, setFileData] = useState<any>(null);
+  const [fileData, setFileData] = useState<FileShare | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -24,8 +24,9 @@ const SharePage = () => {
 
         const shareLink = `${window.location.origin}/share/${shareId}`;
         
-        const { data, error } = await supabase
-          .from('file_shares')
+        // Use type assertion for the table
+        const { data, error } = await (supabase
+          .from('file_shares') as any)
           .select('*')
           .eq('share_link', shareLink)
           .single();
@@ -190,6 +191,10 @@ const SharePage = () => {
             This file will be available for download until {formatDate(fileData?.expires_at)}
           </p>
         </div>
+      </div>
+      
+      <div className="absolute bottom-4 text-center w-full text-white/30 text-xs">
+        © 2025 Akshay Karthick S
       </div>
     </div>
   );
