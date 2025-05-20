@@ -9,6 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      file_downloads: {
+        Row: {
+          downloaded_at: string
+          file_share_id: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          downloaded_at?: string
+          file_share_id: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          downloaded_at?: string
+          file_share_id?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_downloads_file_share_id_fkey"
+            columns: ["file_share_id"]
+            isOneToOne: false
+            referencedRelation: "file_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_shares: {
         Row: {
           created_at: string
@@ -51,6 +83,9 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          is_admin: boolean | null
+          notification_access: boolean | null
+          notification_expiry: boolean | null
           username: string | null
         }
         Insert: {
@@ -58,6 +93,9 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          is_admin?: boolean | null
+          notification_access?: boolean | null
+          notification_expiry?: boolean | null
           username?: string | null
         }
         Update: {
@@ -65,9 +103,50 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          is_admin?: boolean | null
+          notification_access?: boolean | null
+          notification_expiry?: boolean | null
           username?: string | null
         }
         Relationships: []
+      }
+      user_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          file_id: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          file_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          file_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activities_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "file_shares"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

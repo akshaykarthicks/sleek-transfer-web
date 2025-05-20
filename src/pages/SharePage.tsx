@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,19 @@ const SharePage = () => {
           setError("File not found or link has expired");
         } else {
           setFileData(data);
+          
+          // Log file access
+          const { error: activityError } = await (supabase
+            .from('user_activities') as any)
+            .insert({
+              activity_type: 'view',
+              file_id: data.id,
+              ip_address: await fetchIpAddress()
+            });
+            
+          if (activityError) {
+            console.error("Error logging view activity:", activityError);
+          }
         }
       } catch (err: any) {
         console.error("Error fetching file data:", err);
@@ -51,6 +65,17 @@ const SharePage = () => {
     fetchFileData();
   }, [shareId]);
 
+  const fetchIpAddress = async () => {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip;
+    } catch (error) {
+      console.error("Could not fetch IP address:", error);
+      return null;
+    }
+  };
+
   const handleDownload = async () => {
     if (!fileData?.file_url) {
       toast.error("File URL not available");
@@ -60,6 +85,31 @@ const SharePage = () => {
     setIsDownloading(true);
     
     try {
+      // Log the download activity
+      const { error: downloadLogError } = await (supabase
+        .from('file_downloads') as any)
+        .insert({
+          file_share_id: fileData.id,
+          ip_address: await fetchIpAddress()
+        });
+        
+      if (downloadLogError) {
+        console.error("Error logging download:", downloadLogError);
+      }
+      
+      // Also log in the activities table
+      const { error: activityError } = await (supabase
+        .from('user_activities') as any)
+        .insert({
+          activity_type: 'download',
+          file_id: fileData.id,
+          ip_address: await fetchIpAddress()
+        });
+        
+      if (activityError) {
+        console.error("Error logging download activity:", activityError);
+      }
+      
       const response = await fetch(fileData.file_url);
       if (!response.ok) throw new Error('Download failed');
       

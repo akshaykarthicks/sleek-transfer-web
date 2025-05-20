@@ -1,18 +1,21 @@
+
 import React, { useEffect, useState } from "react";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { History, Link as LinkIcon, Copy, Upload, Shield, Clock } from "lucide-react";
+import { History, Link as LinkIcon, Copy, Upload, Shield, Clock, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { FileShare } from "@/types/supabase";
+import { FileShare, Profile } from "@/types/supabase";
+import { Link } from "react-router-dom";
 
 interface FileHistory extends FileShare {}
 
 const Index = () => {
   const [recentFiles, setRecentFiles] = useState<FileHistory[]>([]);
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const features = [
@@ -41,6 +44,19 @@ const Index = () => {
         setUser(user);
 
         if (user) {
+          // Get user profile
+          const { data: profileData, error: profileError } = await (supabase
+            .from('profiles') as any)
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (profileError) {
+            console.error("Error fetching profile:", profileError);
+          } else {
+            setProfile(profileData);
+          }
+
           const twoDaysAgo = new Date();
           twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
@@ -73,6 +89,7 @@ const Index = () => {
           fetchUserAndFiles();
         } else {
           setRecentFiles([]);
+          setProfile(null);
         }
       }
     );
@@ -95,7 +112,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
-      <div className="absolute top-6 right-6 z-10">
+      <div className="absolute top-6 right-6 z-10 flex items-center gap-4">
+        {profile?.is_admin && (
+          <Link to="/dashboard">
+            <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/10 flex items-center gap-2">
+              <BarChart className="w-4 h-4" />
+              Dashboard
+            </Button>
+          </Link>
+        )}
         <AuthButton />
       </div>
 
